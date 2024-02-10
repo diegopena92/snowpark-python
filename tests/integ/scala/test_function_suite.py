@@ -2617,6 +2617,11 @@ def test_timestamp_tz_from_parts(session):
             session.sql("alter session unset timezone").collect()
 
 
+def test_convert_timezone(session):
+    # TODO implement test once to_timestamp_* is integrated
+    pass
+
+
 def test_time_from_parts(session):
     df = session.create_dataframe(
         [[11, 11, 0, 987654321]], schema=["hour", "minute", "second", "nanoseconds"]
