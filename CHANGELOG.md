@@ -5,6 +5,7 @@
 ### New Features
 
 - Added support for creating vectorized UDTFs with `process` method.
+- Added support for `locate` in `snowflake.snowpark.functions`.
 
 ### Deprecations:
 
