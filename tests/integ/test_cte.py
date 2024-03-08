@@ -12,7 +12,7 @@ from snowflake.snowpark._internal.utils import (
     TempObjectType,
     random_name_for_temp_object,
 )
-from snowflake.snowpark.functions import col, lit, when_matched
+from snowflake.snowpark.functions import col, lit, seq1, uniform, when_matched
 from tests.utils import Utils
 
 WITH = "WITH"
@@ -271,3 +271,32 @@ def test_sql_simplifier(session):
     # the only CTE is from df
     assert count_number_of_ctes(df9.queries["queries"][-1]) == 1
     assert df9.queries["queries"][-1].count(filter_clause) == 3
+
+
+def test_table_function(session):
+    df = (
+        session.generator(seq1(1), uniform(1, 10, 2), rowcount=150)
+        .order_by(seq1(1))
+        .limit(3, offset=20)
+    )
+    df_result = df.union_all(df).select("*")
+    check_result(session, df_result, expect_cte_optimized=True)
+    assert count_number_of_ctes(df_result.queries["queries"][-1]) == 1
+
+
+def test_table(session):
+    temp_table_name = random_name_for_temp_object(TempObjectType.TABLE)
+    session.create_dataframe([[1, 2], [3, 4]], schema=["a", "b"]).write.save_as_table(
+        temp_table_name, table_type="temp"
+    )
+    df = session.table(temp_table_name).filter(col("a") == 1)
+    df_result = df.union_all(df).select("*")
+    check_result(session, df_result, expect_cte_optimized=True)
+    assert count_number_of_ctes(df_result.queries["queries"][-1]) == 1
+
+
+def test_sql(session):
+    df = session.sql("select 1 as a, 2 as b").filter(col("a") == 1)
+    df_result = df.union_all(df).select("*")
+    check_result(session, df_result, expect_cte_optimized=True)
+    assert count_number_of_ctes(df_result.queries["queries"][-1]) == 1
