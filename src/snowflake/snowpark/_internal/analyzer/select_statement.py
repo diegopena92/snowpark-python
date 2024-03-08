@@ -561,13 +561,14 @@ class SelectStatement(Selectable):
         if not self.has_clause and not self.projection:
             self._sql_query = self.from_.sql_query
             return self._sql_query
+        placeholder = f"{analyzer_utils.LEFT_PARENTHESIS}{self.from_._id}{analyzer_utils.RIGHT_PARENTHESIS}"
         self._sql_query = self.placeholder_query.replace(
-            self.from_._id, self.from_.sql_in_subquery
+            placeholder, self.from_.sql_in_subquery
         )
         return self._sql_query
 
     @property
-    def placeholder_query(self) -> Optional[str]:
+    def placeholder_query(self) -> str:
         if self._placeholder_query:
             return self._placeholder_query
         from_clause = f"{analyzer_utils.LEFT_PARENTHESIS}{self.from_._id}{analyzer_utils.RIGHT_PARENTHESIS}"
@@ -901,6 +902,10 @@ class SelectTableFunction(Selectable):
     @property
     def sql_query(self) -> str:
         return self._snowflake_plan.queries[-1].sql
+
+    @property
+    def placeholder_query(self) -> Optional[str]:
+        return self._snowflake_plan.placeholder_query
 
     @property
     def schema_query(self) -> str:
